@@ -4,11 +4,9 @@ const Dynamo = require('../common/Dynamo');
 const usersTableName = process.env.usersTableName;
 
 exports.handler = async event => {
-    console.log('event', event);
-
+    console.info('Client disconnecting', event);
     const { connectionId } = event.requestContext;
-
-    await Dynamo.delete(connectionId, usersTableName);
-
+    console.debug(`Removing connection with ID ${connectionId}`);
+    await Dynamo.delete({ ID: connectionId }, usersTableName);
     return Responses._200({ message: 'disconnected' });
 };

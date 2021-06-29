@@ -3,12 +3,20 @@ const AWS = require('aws-sdk');
 const documentClient = new AWS.DynamoDB.DocumentClient();
 
 const Dynamo = {
-    async get(ID, TableName) {
+    async exists(Key, TableName) {
         const params = {
             TableName,
-            Key: {
-                ID,
-            },
+            Key,
+        };
+
+        const data = await documentClient.get(params).promise();
+        return !!data && !!data.Item;
+    },
+
+    async get(Key, TableName) {
+        const params = {
+            TableName,
+            Key,
         };
 
         const data = await documentClient.get(params).promise();
@@ -16,7 +24,7 @@ const Dynamo = {
         if (!data || !data.Item) {
             throw Error(`There was an error fetching the data for ID of ${ID} from ${TableName}`);
         }
-        console.info(data);
+        console.debug(data);
 
         return data.Item;
     },
@@ -29,17 +37,35 @@ const Dynamo = {
         const data = await documentClient.scan(params).promise();
 
         if (!data || !data.Items) {
-            throw Error(`There was an error fetching the data for ID of ${ID} from ${TableName}`);
+            throw Error(`There was an error fetching the data ${TableName}`);
         }
-        console.info(data);
+        console.debug(data);
 
         return data.Items;
     },
 
-    async write(data, TableName) {
+    async search(FilterExpression, ExpressionAttributeValues, TableName) {
+        const params = {
+            TableName,
+            FilterExpression,
+            ExpressionAttributeValues,
+        };
+
+        const data = await documentClient.scan(params).promise();
+
+        if (!data || !data.Items) {
+            throw Error(`There was an error searching for items in ${TableName}`);
+        }
+        console.debug(data);
+
+        return data.Items;
+    },
+
+    async write(data, TableName, ConditionExpression) {
         const params = {
             TableName,
             Item: data,
+            ConditionExpression
         };
 
         const res = await documentClient.put(params).promise();
@@ -51,12 +77,11 @@ const Dynamo = {
         return data;
     },
 
-    async delete(ID, TableName) {
+    async delete(Key, TableName, ConditionExpression) {
         const params = {
             TableName,
-            Key: {
-                ID,
-            },
+            Key,
+            ConditionExpression
         };
 
         return documentClient.delete(params).promise();

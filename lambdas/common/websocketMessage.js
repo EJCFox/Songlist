@@ -8,11 +8,11 @@ const create = (domainName, stage) => {
     });
 };
 
-const send = ({ domainName, stage, connectionId, message }) => {
+const send = ({ domainName, stage, connectionId, data }) => {
     const ws = create(domainName, stage);
 
     const postParams = {
-        Data: message,
+        Data: JSON.stringify(data),
         ConnectionId: connectionId,
     };
 
