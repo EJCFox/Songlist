@@ -61,11 +61,12 @@ const Dynamo = {
         return data.Items;
     },
 
-    async write(data, TableName, ConditionExpression) {
+    async write(data, TableName, ConditionExpression, ExpressionAttributeValues) {
         const params = {
             TableName,
             Item: data,
-            ConditionExpression
+            ConditionExpression,
+            ExpressionAttributeValues
         };
 
         const res = await documentClient.put(params).promise();
@@ -77,11 +78,12 @@ const Dynamo = {
         return data;
     },
 
-    async delete(Key, TableName, ConditionExpression) {
+    async delete(Key, TableName, ConditionExpression, ReturnValues) {
         const params = {
             TableName,
             Key,
-            ConditionExpression
+            ConditionExpression,
+            ReturnValues
         };
 
         return documentClient.delete(params).promise();

@@ -46,11 +46,16 @@ functions:
         events:
             - websocket:
                   route: queueAdd
-    websocket-queue-remove:
-        handler: lambdas/websockets/queueRemove.handler
+    websocket-queue-cancel:
+        handler: lambdas/websockets/queueCancel.handler
         events:
             - websocket:
-                  route: queueRemove
+                  route: queueCancel
+    websocket-queue-play:
+        handler: lambdas/websockets/queuePlayed.handler
+        events:
+            - websocket:
+                  route: queuePlayed
     websocket-queue-bump:
         handler: lambdas/websockets/queueBump.handler
         events:

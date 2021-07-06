@@ -23,7 +23,9 @@ exports.handler = async event => {
             data: songItems.map((item) => ({
                 id: item.ID,
                 title: item.Title,
-                artist: item.Artist
+                artist: item.Artist,
+                numberOfPlays: item.NumberOfPlays,
+                lastPlayed: item.LastPlayed ? item.LastPlayed : null
             }))
         },
     });

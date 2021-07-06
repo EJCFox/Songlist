@@ -43,7 +43,10 @@ exports.handler = async event => {
     
     await broadcast({ action: 'queueBump', data: {
         songId: updatedQueueEntry.SongID,
-        priority: updatedQueueEntry.Priority
+        title: updatedQueueEntry.Title,
+        artist: updatedQueueEntry.Artist,
+        priority: updatedQueueEntry.Priority,
+        position: newPosition
     }});
 
     return Responses._200({ message: 'song added' });

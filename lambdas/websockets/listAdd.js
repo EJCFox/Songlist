@@ -45,7 +45,8 @@ exports.handler = async event => {
         data: {
             id: newSongEntry.ID,
             title: newSongEntry.Title,
-            artist: newSongEntry.Artist
+            artist: newSongEntry.Artist,
+            numberOfPlays: newSongEntry.NumberOfPlays
         }
     });
 
