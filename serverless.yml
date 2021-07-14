@@ -30,52 +30,54 @@ functions:
         handler: lambdas/websockets/connect.handler
         events:
             - websocket:
-                  route: $connect
+                route: $connect
     websocket-disconnect:
         handler: lambdas/websockets/disconnect.handler
         events:
             - websocket:
-                  route: $disconnect
+                route: $disconnect
     websocket-default:
         handler: lambdas/websockets/default.handler
         events:
             - websocket:
-                  route: $default
+                route: $default
     websocket-queue-add:
         handler: lambdas/websockets/queueAdd.handler
         events:
             - websocket:
-                  route: queueAdd
+                route: queueAdd
     websocket-queue-cancel:
         handler: lambdas/websockets/queueCancel.handler
         events:
             - websocket:
-                  route: queueCancel
+                route: queueCancel
     websocket-queue-play:
         handler: lambdas/websockets/queuePlayed.handler
         events:
             - websocket:
-                  route: queuePlayed
+                route: queuePlayed
     websocket-queue-bump:
         handler: lambdas/websockets/queueBump.handler
         events:
             - websocket:
-                  route: queueBump
+                route: queueBump
     websocket-queue-get:
         handler: lambdas/websockets/queueGet.handler
         events:
             - websocket:
-                  route: queueGet
+                route: queueGet
+                routeResponseSelectionExpression: $default
     websocket-list-add:
         handler: lambdas/websockets/listAdd.handler
         events:
             - websocket:
-                  route: listAdd
+                route: listAdd
     websocket-list-get:
         handler: lambdas/websockets/listGet.handler
         events:
             - websocket:
-                  route: listGet
+                route: listGet
+                routeResponseSelectionExpression: $default
 
 resources:
     Resources:
