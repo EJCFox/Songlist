@@ -1,4 +1,5 @@
 service: songlist
+configValidationMode: error
 
 provider:
     name: aws
