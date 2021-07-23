@@ -1,5 +1,7 @@
 service: songlist
 configValidationMode: error
+useDotenv: true
+unresolvedVariablesNotificationMode: error
 
 provider:
     name: aws
@@ -12,12 +14,18 @@ provider:
         songQueueTableName: ${self:custom.songQueueTableName}
         songListTableName: ${self:custom.songListTableName}
         songHistoryTableName: ${self:custom.songHistoryTableName}
+        twitchClientId: ${env:TWITCH_CLIENT_ID}
+        twitchRedirectUri: ${env:TWITCH_REDIRECT_URI}
     iam:
         role:
             statements:
                 - Effect: Allow
                   Action:
                       - dynamodb:*
+                  Resource: '*'
+                - Effect: Allow
+                  Action:
+                      - ssm:GetParameter
                   Resource: '*'
 
 custom:
@@ -32,6 +40,12 @@ functions:
         events:
             - websocket:
                 route: $connect
+                authorizer:
+                    name: auth
+                    identitySource:
+                        - 'route.request.querystring.auth'
+    auth:
+        handler: lambdas/websockets/auth.handler
     websocket-disconnect:
         handler: lambdas/websockets/disconnect.handler
         events:
@@ -78,6 +92,12 @@ functions:
         events:
             - websocket:
                 route: listGet
+                routeResponseSelectionExpression: $default
+    websocket-get-user:
+        handler: lambdas/websockets/getUser.handler
+        events:
+            - websocket:
+                route: getUser
                 routeResponseSelectionExpression: $default
 
 resources:
@@ -130,4 +150,3 @@ resources:
                     - AttributeName: Timestamp
                       KeyType: RANGE
                 BillingMode: PAY_PER_REQUEST
-    
