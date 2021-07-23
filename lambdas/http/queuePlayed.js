@@ -1,33 +1,26 @@
-const Responses = require("../common/API_Responses");
-const Dynamo = require("../common/Dynamo");
-const { broadcast } = require("../helpers/broadcast");
+const Responses = require('../helpers/API_Responses');
+const Dynamo = require('../helpers/Dynamo');
+const { broadcast } = require('../helpers/broadcast');
 
 const songListTableName = process.env.songListTableName;
 const songQueueTableName = process.env.songQueueTableName;
 const songHistoryTableName = process.env.songHistoryTableName;
 
 exports.handler = async (event) => {
-  console.info("Queue mark song as played request received", event);
-  const body = JSON.parse(event.body);
-
-  if (!body.songId) {
-    return Responses._400({ message: "Song ID must be specified" });
-  }
+  console.info('Queue mark song as played request received', event);
+  const songId = event.pathParameters.songId;
 
   const timestamp = new Date().toISOString();
-  const songItem = await Dynamo.get({ ID: body.songId }, songListTableName);
+  const songItem = await Dynamo.get({ ID: songId }, songListTableName);
 
   try {
     await Dynamo.delete(
-      { SongID: body.songId },
+      { SongID: songId },
       songQueueTableName,
-      "attribute_exists(SongID)"
+      'attribute_exists(SongID)'
     );
   } catch (error) {
-    console.info(`Song with ID ${body.songId} not found in queue`, error);
-    return Responses._404({
-      message: `Song with ID ${body.songId} not found in queue`,
-    });
+    throw new Error(`[404] Song not currently queued`);
   }
 
   const updatedSongItem = {
@@ -36,27 +29,29 @@ exports.handler = async (event) => {
     LastPlayed: timestamp,
   };
   const historyItem = {
-    SongID: body.songId,
+    SongID: songId,
     Timestamp: timestamp,
   };
 
+  console.info('Updating song list entry', songItem, updatedSongItem);
   await Dynamo.write(
     updatedSongItem,
     songListTableName,
     `NumberOfPlays = :numberOfPlays`,
-    { ":numberOfPlays": songItem.NumberOfPlays }
+    { ':numberOfPlays': songItem.NumberOfPlays }
   );
+  console.info('Writing history entry', historyItem);
   await Dynamo.write(historyItem, songHistoryTableName);
+
   await broadcast({
-    action: "queuePlayed",
+    action: 'queuePlayed',
     data: {
-      songId: body.songId,
+      songId: songId,
       title: updatedSongItem.Title,
       artist: updatedSongItem.Artist,
       numberOfPlays: updatedSongItem.NumberOfPlays,
       lastPlayed: updatedSongItem.LastPlayed,
     },
   });
-
-  return Responses._200({ message: "song removed" });
+  return Responses._204();
 };

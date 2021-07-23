@@ -4,7 +4,6 @@
     "description": "",
     "main": "webpack.config.js",
     "dependencies": {
-        "jsonwebtoken": "^8.5.1",
         "serverless": "^1.60.4",
         "serverless-webpack": "^5.3.1",
         "uuid": "^8.3.2"

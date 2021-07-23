@@ -4,149 +4,193 @@ useDotenv: true
 unresolvedVariablesNotificationMode: error
 
 provider:
-    name: aws
-    runtime: nodejs12.x
-    profile: Songlist
-    region: eu-west-2
-    lambdaHashingVersion: 20201221
-    environment:
-        usersTableName: ${self:custom.usersTableName}
-        songQueueTableName: ${self:custom.songQueueTableName}
-        songListTableName: ${self:custom.songListTableName}
-        songHistoryTableName: ${self:custom.songHistoryTableName}
-        twitchClientId: ${env:TWITCH_CLIENT_ID}
-        twitchRedirectUri: ${env:TWITCH_REDIRECT_URI}
-    iam:
-        role:
-            statements:
-                - Effect: Allow
-                  Action:
-                      - dynamodb:*
-                  Resource: '*'
-                - Effect: Allow
-                  Action:
-                      - ssm:GetParameter
-                  Resource: '*'
+  name: aws
+  runtime: nodejs12.x
+  profile: Songlist
+  region: eu-west-2
+  lambdaHashingVersion: 20201221
+  environment:
+    usersTableName: ${self:custom.usersTableName}
+    songQueueTableName: ${self:custom.songQueueTableName}
+    songListTableName: ${self:custom.songListTableName}
+    songHistoryTableName: ${self:custom.songHistoryTableName}
+    twitchClientId: ${env:TWITCH_CLIENT_ID}
+    twitchRedirectUri: ${env:TWITCH_REDIRECT_URI}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:*
+          Resource: '*'
+        - Effect: Allow
+          Action:
+            - ssm:GetParameter
+          Resource: '*'
+  httpApi:
+    authorizers:
+      twitchAuthorizer:
+        type: jwt
+        identitySource: $request.header.Authorization
+        issuerUrl: https://id.twitch.tv/oauth2
+        audience:
+          - ${env:TWITCH_CLIENT_ID}
 
 custom:
-    usersTableName: WebsocketUsers
-    songQueueTableName: SongQueue
-    songListTableName: SongList
-    songHistoryTableName: SongHistory
+  usersTableName: WebsocketUsers
+  songQueueTableName: SongQueue
+  songListTableName: SongList
+  songHistoryTableName: SongHistory
 
 functions:
-    websocket-connect:
-        handler: lambdas/websockets/connect.handler
-        events:
-            - websocket:
-                route: $connect
-                authorizer:
-                    name: auth
-                    identitySource:
-                        - 'route.request.querystring.auth'
-    auth:
-        handler: lambdas/websockets/auth.handler
-    websocket-disconnect:
-        handler: lambdas/websockets/disconnect.handler
-        events:
-            - websocket:
-                route: $disconnect
-    websocket-default:
-        handler: lambdas/websockets/default.handler
-        events:
-            - websocket:
-                route: $default
-    websocket-queue-add:
-        handler: lambdas/websockets/queueAdd.handler
-        events:
-            - websocket:
-                route: queueAdd
-    websocket-queue-cancel:
-        handler: lambdas/websockets/queueCancel.handler
-        events:
-            - websocket:
-                route: queueCancel
-    websocket-queue-play:
-        handler: lambdas/websockets/queuePlayed.handler
-        events:
-            - websocket:
-                route: queuePlayed
-    websocket-queue-bump:
-        handler: lambdas/websockets/queueBump.handler
-        events:
-            - websocket:
-                route: queueBump
-    websocket-queue-get:
-        handler: lambdas/websockets/queueGet.handler
-        events:
-            - websocket:
-                route: queueGet
-                routeResponseSelectionExpression: $default
-    websocket-list-add:
-        handler: lambdas/websockets/listAdd.handler
-        events:
-            - websocket:
-                route: listAdd
-    websocket-list-get:
-        handler: lambdas/websockets/listGet.handler
-        events:
-            - websocket:
-                route: listGet
-                routeResponseSelectionExpression: $default
-    websocket-get-user:
-        handler: lambdas/websockets/getUser.handler
-        events:
-            - websocket:
-                route: getUser
-                routeResponseSelectionExpression: $default
+  # Websocket (for notifications only - no auth needed)
+  websocket-connect:
+    handler: lambdas/websockets/connect.handler
+    events:
+      - websocket:
+          route: $connect
+  websocket-disconnect:
+    handler: lambdas/websockets/disconnect.handler
+    events:
+      - websocket:
+          route: $disconnect
+  websocket-default:
+    handler: lambdas/websockets/default.handler
+    events:
+      - websocket:
+          route: $default
+          routeResponseSelectionExpression: $default
+
+  # HTTP (for all other requests)
+
+  # Authorisation
+  authorize:
+    handler: lambdas/http/auth.handler
+    events:
+      - httpApi:
+        method: GET
+        path: /authorize
+
+  # List
+  list-get:
+    handler: lambdas/http/listGet.handler
+    events:
+      - httpApi:
+        method: GET
+        path: /list
+  list-add:
+    handler: lambdas/http/listAdd.handler
+    events:
+      - httpApi:
+        method: POST
+        path: /list
+        authorizer:
+          name: twitchAuthorizer
+
+  # Queue
+  queue-get:
+    handler: lambdas/http/queueGet.handler
+    events:
+      - httpApi:
+        method: GET
+        path: /queue
+  queue-add:
+    handler: lambdas/http/queueAdd.handler
+    events:
+      - httpApi:
+        method: POST
+        path: /queue/{songId}
+        request:
+          parameters:
+            paths:
+              songId: true
+        authorizer:
+          name: twitchAuthorizer
+  queue-bump:
+    handler: lambdas/http/queueBump.handler
+    events:
+      - httpApi:
+        method: PATCH
+        path: /queue/{songId}/bump/{toPosition}
+        request:
+          parameters:
+            paths:
+              songId: true
+              toPosition: true
+        authorizer:
+          name: twitchAuthorizer
+  queue-cancel:
+    handler: lambdas/http/queueCancel.handler
+    events:
+      - httpApi:
+        method: DELETE
+        path: /queue/{songId}
+        request:
+          parameters:
+            paths:
+              songId: true
+        authorizer:
+          name: twitchAuthorizer
+  queue-played:
+    handler: lambdas/http/queuePlayed.handler
+    events:
+      - httpApi:
+        method: PATCH
+        path: /queue/{songId}/played
+        request:
+          parameters:
+            paths:
+              songId: true
+        authorizer:
+          name: twitchAuthorizer
 
 resources:
-    Resources:
-        WebsocketUserTable:
-            Type: AWS::DynamoDB::Table
-            Properties:
-                TableName: ${self:custom.usersTableName}
-                AttributeDefinitions:
-                    - AttributeName: ID
-                      AttributeType: S
-                KeySchema:
-                    - AttributeName: ID
-                      KeyType: HASH
-                BillingMode: PAY_PER_REQUEST
-        SongListTable:
-            Type: AWS::DynamoDB::Table
-            Properties:
-                TableName: ${self:custom.songListTableName}
-                AttributeDefinitions:
-                    - AttributeName: ID
-                      AttributeType: S
-                KeySchema:
-                    - AttributeName: ID
-                      KeyType: HASH
-                BillingMode: PAY_PER_REQUEST
-        SongQueueTable:
-            Type: AWS::DynamoDB::Table
-            Properties:
-                TableName: ${self:custom.songQueueTableName}
-                AttributeDefinitions:
-                    - AttributeName: SongID
-                      AttributeType: S
-                KeySchema:
-                    - AttributeName: SongID
-                      KeyType: HASH
-                BillingMode: PAY_PER_REQUEST
-        SongHistoryTable:
-            Type: AWS::DynamoDB::Table
-            Properties:
-                TableName: ${self:custom.songHistoryTableName}
-                AttributeDefinitions:
-                    - AttributeName: SongID
-                      AttributeType: S
-                    - AttributeName: Timestamp
-                      AttributeType: S
-                KeySchema:
-                    - AttributeName: SongID
-                      KeyType: HASH
-                    - AttributeName: Timestamp
-                      KeyType: RANGE
-                BillingMode: PAY_PER_REQUEST
+  Resources:
+    WebsocketUserTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.usersTableName}
+        AttributeDefinitions:
+          - AttributeName: ID
+            AttributeType: S
+        KeySchema:
+          - AttributeName: ID
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+    SongListTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.songListTableName}
+        AttributeDefinitions:
+          - AttributeName: ID
+            AttributeType: S
+        KeySchema:
+          - AttributeName: ID
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+    SongQueueTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.songQueueTableName}
+        AttributeDefinitions:
+          - AttributeName: SongID
+            AttributeType: S
+        KeySchema:
+          - AttributeName: SongID
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+    SongHistoryTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.songHistoryTableName}
+        AttributeDefinitions:
+          - AttributeName: SongID
+            AttributeType: S
+          - AttributeName: Timestamp
+            AttributeType: S
+        KeySchema:
+          - AttributeName: SongID
+            KeyType: HASH
+          - AttributeName: Timestamp
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST

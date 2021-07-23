@@ -1,5 +1,5 @@
-const WebSocket = require('../common/websocketMessage');
-const Dynamo = require('../common/Dynamo');
+const WebSocket = require('../helpers/websocketMessage');
+const Dynamo = require('../helpers/Dynamo');
 
 const usersTableName = process.env.usersTableName;
 

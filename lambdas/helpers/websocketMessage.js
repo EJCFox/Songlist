@@ -19,6 +19,17 @@ const send = ({ domainName, stage, connectionId, data }) => {
     return ws.postToConnection(postParams).promise();
 };
 
+const close = ({ domainName, stage, connectionId }) => {
+    const ws = create(domainName, stage);
+
+    const deleteParams = {
+        ConnectionId: connectionId,
+    };
+
+    return ws.deleteConnection(deleteParams).promise();
+};
+
 module.exports = {
     send,
+    close
 };
