@@ -2,11 +2,18 @@ const response = require('../helpers/apiResponses');
 const dynamo = require('../helpers/dynamo');
 const websocket = require('../helpers/websocket');
 const validation = require('../helpers/parameterValidation');
+const { isAdminRequest } = require('../helpers/adminHelper');
 
 const songQueueTableName = process.env.songQueueTableName;
 
 exports.handler = async (event) => {
   console.info('Queue cancel request received', event);
+
+  if (!isAdminRequest(event)) {
+    return response.unauthorized({
+      message: 'Unauthorized: only admins can cancel songs',
+    });
+  }
 
   const songId = event.pathParameters.songId;
   if (!validation.isValidId(songId)) {

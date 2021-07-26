@@ -3,11 +3,19 @@ const response = require('../helpers/apiResponses');
 const dynamo = require('../helpers/dynamo');
 const validation = require('../helpers/parameterValidation');
 const websocket = require('../helpers/websocket');
+const { isAdminRequest } = require('../helpers/adminHelper');
 
 const songListTableName = process.env.songListTableName;
 
 exports.handler = async (event) => {
   console.info('List add request received', event);
+
+  if (!isAdminRequest(event)) {
+    return response.unauthorized({
+      message: 'Unauthorized: only admins can add songs to the list',
+    });
+  }
+
   const body = JSON.parse(event.body);
 
   if (!validation.isRequiredString(body.title)) {

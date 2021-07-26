@@ -2,6 +2,7 @@ const response = require('../helpers/apiResponses');
 const dynamo = require('../helpers/dynamo');
 const websocket = require('../helpers/websocket');
 const validation = require('../helpers/parameterValidation');
+const { isAdminRequest } = require('../helpers/adminHelper');
 
 const songListTableName = process.env.songListTableName;
 const songQueueTableName = process.env.songQueueTableName;
@@ -9,6 +10,13 @@ const songHistoryTableName = process.env.songHistoryTableName;
 
 exports.handler = async (event) => {
   console.info('Queue mark song as played request received', event);
+
+  if (!isAdminRequest(event)) {
+    return response.unauthorized({
+      message: 'Unauthorized: only admins can mark songs as played',
+    });
+  }
+
   const songId = event.pathParameters.songId;
   if (!validation.isValidId(songId)) {
     return response.badRequest({ message: 'Invalid song ID' });
