@@ -14,6 +14,8 @@ exports.handler = async (event) => {
     return response.badRequest({ message: 'Invalid song ID' });
   }
 
+  const user = event.requestContext.authorizer.jwt.claims.preferred_username;
+
   let songListItem;
   try {
     songListItem = await dynamo.get({ ID: songId }, songListTableName);
@@ -36,6 +38,7 @@ exports.handler = async (event) => {
     Priority: existingQueueItems.length
       ? existingQueueItems[existingQueueItems.length - 1].Priority + 1
       : 1,
+    RequestedBy: user,
   };
   console.info('Adding queue entry', newQueueEntry);
   await dynamo.write(newQueueEntry, songQueueTableName);
@@ -45,6 +48,7 @@ exports.handler = async (event) => {
     artist: newQueueEntry.Artist,
     title: newQueueEntry.Title,
     priority: newQueueEntry.Priority,
+    requestedBy: newQueueEntry.RequestedBy,
   };
   console.debug('Song added to queue', queueData);
 

@@ -12,6 +12,7 @@ exports.handler = async (event) => {
       title: item.Title,
       artist: item.Artist,
       priority: item.Priority,
+      requestedBy: item.RequestedBy,
     }))
   );
 };
