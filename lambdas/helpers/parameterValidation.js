@@ -6,8 +6,11 @@ const isPositiveInteger = (value) =>
 const isValidId = (value) =>
   value && typeof value === 'string' && /^[a-zA-Z0-9\-]+$/.test(value);
 
+const isRequiredBoolean = (value) => typeof value === 'boolean';
+
 module.exports = {
   isRequiredString,
   isPositiveInteger,
   isValidId,
+  isRequiredBoolean,
 };

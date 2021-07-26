@@ -5,6 +5,7 @@ const validation = require('../helpers/parameterValidation');
 
 const songListTableName = process.env.songListTableName;
 const songQueueTableName = process.env.songQueueTableName;
+const configTableName = process.env.configTableName;
 
 exports.handler = async (event) => {
   console.info('Queue add request received', event);
@@ -12,6 +13,15 @@ exports.handler = async (event) => {
   const songId = event.pathParameters.songId;
   if (!validation.isValidId(songId)) {
     return response.badRequest({ message: 'Invalid song ID' });
+  }
+
+  const config = await dynamo.getIfExists(
+    { ConfigKey: 'RequestsOpen' },
+    configTableName
+  );
+  const requestsOpen = config ? config.ConfigValue : false;
+  if (!requestsOpen) {
+    return response.badRequest({ message: 'Requests are currently closed' });
   }
 
   const user = event.requestContext.authorizer.jwt.claims.preferred_username;

@@ -14,6 +14,7 @@ provider:
         songQueueTableName: ${self:custom.songQueueTableName}
         songListTableName: ${self:custom.songListTableName}
         songHistoryTableName: ${self:custom.songHistoryTableName}
+        configTableName: ${self:custom.configTableName}
         twitchClientId: ${env:TWITCH_CLIENT_ID}
         twitchRedirectUri: ${env:TWITCH_REDIRECT_URI}
         adminUsers: ${env:ADMIN_USERS}
@@ -41,10 +42,11 @@ provider:
                     - ${env:TWITCH_CLIENT_ID}
 
 custom:
-    usersTableName: WebsocketUsers
-    songQueueTableName: SongQueue
-    songListTableName: SongList
-    songHistoryTableName: SongHistory
+    usersTableName: Songlist-WebsocketConnections
+    songQueueTableName: Songlist-Queue
+    songListTableName: Songlist-Songs
+    songHistoryTableName: Songlist-History
+    configTableName: Songlist-Config
 
 functions:
     # Websocket (for notifications only - no auth needed)
@@ -74,6 +76,22 @@ functions:
             - httpApi:
                   method: GET
                   path: /authorize
+
+    # Admin
+    status-get:
+        handler: lambdas/http/statusGet.handler
+        events:
+            - httpApi:
+                  method: GET
+                  path: /status
+    status-update:
+        handler: lambdas/http/statusUpdate.handler
+        events:
+            - httpApi:
+                  method: POST
+                  path: /status
+                  authorizer:
+                      name: twitchAuthorizer
 
     # List
     list-get:
@@ -180,4 +198,15 @@ resources:
                       KeyType: HASH
                     - AttributeName: Timestamp
                       KeyType: RANGE
+                BillingMode: PAY_PER_REQUEST
+        ConfigTable:
+            Type: AWS::DynamoDB::Table
+            Properties:
+                TableName: ${self:custom.configTableName}
+                AttributeDefinitions:
+                    - AttributeName: ConfigKey
+                      AttributeType: S
+                KeySchema:
+                    - AttributeName: ConfigKey
+                      KeyType: HASH
                 BillingMode: PAY_PER_REQUEST

@@ -31,6 +31,24 @@ const dynamo = {
     return data.Item;
   },
 
+  async getIfExists(Key, TableName) {
+    const params = {
+      TableName,
+      Key,
+    };
+
+    const data = await documentClient.get(params).promise();
+
+    if (!data) {
+      throw Error(
+        `There was an error fetching the data for ID of ${ID} from ${TableName}`
+      );
+    }
+    console.debug(data);
+
+    return data.Item || null;
+  },
+
   async getAll(TableName) {
     const params = {
       TableName,
