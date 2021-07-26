@@ -1,23 +1,33 @@
 const Responses = require('../helpers/API_Responses');
 const Dynamo = require('../helpers/Dynamo');
 const { broadcast } = require('../helpers/broadcast');
+const Validation = require('../helpers/validation');
 
 const songQueueTableName = process.env.songQueueTableName;
 
 exports.handler = async (event) => {
   console.info('Queue bump request received', event);
-  const { songId, toPosition } = event.pathParameters;
+
+  const { songId } = event.pathParameters;
+  if (!Validation.isValidId(songId)) {
+    return Responses._400({ message: 'Invalid song ID' });
+  }
+
+  const { toPosition } = JSON.parse(event.body);
+  if (!Validation.isPositiveInteger(toPosition)) {
+    return Responses._400({ message: 'Invalid position' });
+  }
 
   const newPosition = parseInt(toPosition, 10);
   if (!newPosition || newPosition <= 0) {
-    throw new Error(`[400] Position ${newPosition} is invalid`);
+    return Responses._400({ message: `Position ${newPosition} is invalid` });
   }
 
   let queueItem;
   try {
     queueItem = await Dynamo.get({ SongID: songId }, songQueueTableName);
   } catch (error) {
-    throw new Error(`[404] Song not currently queued`);
+    return Responses._404({ message: 'Song not currently queued' });
   }
 
   const priorItemsInQueue = (await Dynamo.getAll(songQueueTableName))
@@ -28,7 +38,9 @@ exports.handler = async (event) => {
     priorItemsInQueue[priorItemsInQueue.length - 1];
 
   if (currentQueueItemAtPosition.SongID === songId) {
-    throw new Error(`[400] Song already queued at position ${newPosition}`);
+    return Responses._400({
+      message: `Song already queued at position ${newPosition}`,
+    });
   }
 
   const updatedQueueEntry = {

@@ -1,12 +1,17 @@
 const Responses = require('../helpers/API_Responses');
 const Dynamo = require('../helpers/Dynamo');
 const { broadcast } = require('../helpers/broadcast');
+const Validation = require('../helpers/validation');
 
 const songQueueTableName = process.env.songQueueTableName;
 
 exports.handler = async (event) => {
   console.info('Queue cancel request received', event);
+
   const songId = event.pathParameters.songId;
+  if (!Validation.isValidId(songId)) {
+    return Responses._400({ message: 'Invalid song ID' });
+  }
 
   let oldValue;
   try {
@@ -18,7 +23,7 @@ exports.handler = async (event) => {
     );
     console.info('Removed song from queue', oldValue);
   } catch (error) {
-    throw new Error(`[404] Song not currently queued`);
+    return Responses._404({ message: 'Song not currently queued' });
   }
 
   await broadcast({

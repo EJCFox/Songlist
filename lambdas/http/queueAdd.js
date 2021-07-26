@@ -1,23 +1,28 @@
 const Responses = require('../helpers/API_Responses');
 const Dynamo = require('../helpers/Dynamo');
 const { broadcast } = require('../helpers/broadcast');
+const Validation = require('../helpers/validation');
 
 const songListTableName = process.env.songListTableName;
 const songQueueTableName = process.env.songQueueTableName;
 
 exports.handler = async (event) => {
   console.info('Queue add request received', event);
+  
   const songId = event.pathParameters.songId;
+  if (!Validation.isValidId(songId)) {
+    return Responses._400({ message: 'Invalid song ID' });
+  }
 
   let songListItem;
   try {
     songListItem = await Dynamo.get({ ID: songId }, songListTableName);
   } catch (error) {
-    throw new Error('[404] Song not found');
+    return Responses._404({ message: 'Song not found' });
   }
 
   if (await Dynamo.exists({ SongID: songId }, songQueueTableName)) {
-    throw new Error('[400] Song already queued');
+    return Responses._400({ message: 'Song already queued' });
   }
 
   console.debug('Adding song to queue', songListItem);
@@ -41,7 +46,7 @@ exports.handler = async (event) => {
     title: newQueueEntry.Title,
     priority: newQueueEntry.Priority,
   };
-  console.debug('Song added to queue', songData);
+  console.debug('Song added to queue', queueData);
 
   await broadcast({
     action: 'queueAdd',

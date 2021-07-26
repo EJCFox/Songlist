@@ -1,12 +1,18 @@
 const AWS = require('aws-sdk');
 const https = require('https');
+const Responses = require('../helpers/API_Responses');
+const Validation = require('../helpers/validation');
 
 const twitchClientId = process.env.twitchClientId;
 const twitchRedirectUri = process.env.twitchRedirectUri;
 
 exports.handler = async (event) => {
   console.log('Authentication request received:', event);
-  var code = event.queryStringParameters.code;
+  var code = event.queryStringParameters && event.queryStringParameters.code;
+
+  if (!Validation.isRequiredString(code)) {
+    return Responses._400({ message: 'Invalid code' });
+  }
 
   var ssm = new AWS.SSM();
   var params = {
@@ -32,7 +38,7 @@ exports.handler = async (event) => {
       });
     });
     tokenRequest.on('error', (e) => {
-      reject(Error(e));
+      reject(e);
     });
     tokenRequest.end();
   });
