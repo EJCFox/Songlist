@@ -1,7 +1,7 @@
-const Responses = require('../helpers/API_Responses');
-const Dynamo = require('../helpers/Dynamo');
-const { broadcast } = require('../helpers/broadcast');
-const Validation = require('../helpers/validation');
+const response = require('../helpers/apiResponses');
+const dynamo = require('../helpers/dynamo');
+const websocket = require('../helpers/websocket');
+const validation = require('../helpers/parameterValidation');
 
 const songQueueTableName = process.env.songQueueTableName;
 
@@ -9,28 +9,28 @@ exports.handler = async (event) => {
   console.info('Queue bump request received', event);
 
   const { songId } = event.pathParameters;
-  if (!Validation.isValidId(songId)) {
-    return Responses._400({ message: 'Invalid song ID' });
+  if (!validation.isValidId(songId)) {
+    return response.badRequest({ message: 'Invalid song ID' });
   }
 
   const { toPosition } = JSON.parse(event.body);
-  if (!Validation.isPositiveInteger(toPosition)) {
-    return Responses._400({ message: 'Invalid position' });
+  if (!validation.isPositiveInteger(toPosition)) {
+    return response.badRequest({ message: 'Invalid position' });
   }
 
   const newPosition = parseInt(toPosition, 10);
   if (!newPosition || newPosition <= 0) {
-    return Responses._400({ message: `Position ${newPosition} is invalid` });
+    return response.badRequest({ message: `Position ${newPosition} is invalid` });
   }
 
   let queueItem;
   try {
-    queueItem = await Dynamo.get({ SongID: songId }, songQueueTableName);
+    queueItem = await dynamo.get({ SongID: songId }, songQueueTableName);
   } catch (error) {
-    return Responses._404({ message: 'Song not currently queued' });
+    return response.notFound({ message: 'Song not currently queued' });
   }
 
-  const priorItemsInQueue = (await Dynamo.getAll(songQueueTableName))
+  const priorItemsInQueue = (await dynamo.getAll(songQueueTableName))
     .sort((a, b) => a.Priority - b.Priority)
     .slice(0, newPosition);
 
@@ -38,7 +38,7 @@ exports.handler = async (event) => {
     priorItemsInQueue[priorItemsInQueue.length - 1];
 
   if (currentQueueItemAtPosition.SongID === songId) {
-    return Responses._400({
+    return response.badRequest({
       message: `Song already queued at position ${newPosition}`,
     });
   }
@@ -53,7 +53,7 @@ exports.handler = async (event) => {
       2,
   };
   console.info('Updating queue entry', queueItem, updatedQueueEntry);
-  await Dynamo.write(updatedQueueEntry, songQueueTableName);
+  await dynamo.write(updatedQueueEntry, songQueueTableName);
 
   const queueData = {
     songId: updatedQueueEntry.SongID,
@@ -64,9 +64,9 @@ exports.handler = async (event) => {
   };
   console.debug('Song bumped in queue', queueData);
 
-  await broadcast({
+  await websocket.broadcast({
     action: 'queueBump',
     data: queueData,
   });
-  return Responses._200(queueData);
+  return response.success(queueData);
 };

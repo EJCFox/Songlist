@@ -1,5 +1,5 @@
-const Responses = require('../helpers/API_Responses');
-const Dynamo = require('../helpers/Dynamo');
+const response = require('../helpers/apiResponses');
+const dynamo = require('../helpers/dynamo');
 
 const usersTableName = process.env.usersTableName;
 
@@ -13,7 +13,7 @@ exports.handler = async (event) => {
     stage,
   };
   console.debug('Writing connection to database', newConnection);
-  await Dynamo.write(newConnection, usersTableName);
+  await dynamo.write(newConnection, usersTableName);
   console.info('Connection details successfully saved', newConnection);
-  return Responses._200('Hello');
+  return response.success('Hello');
 };

@@ -1,12 +1,12 @@
-const Responses = require('../helpers/API_Responses');
-const Dynamo = require('../helpers/Dynamo');
+const response = require('../helpers/apiResponses');
+const dynamo = require('../helpers/dynamo');
 
 const songListTableName = process.env.songListTableName;
 
 exports.handler = async (event) => {
   console.info('Queue get request received', event);
-  const songItems = await Dynamo.getAll(songListTableName);
-  return Responses._200(
+  const songItems = await dynamo.getAll(songListTableName);
+  return response.success(
     songItems.map((item) => ({
       id: item.ID,
       title: item.Title,

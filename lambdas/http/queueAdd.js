@@ -1,32 +1,32 @@
-const Responses = require('../helpers/API_Responses');
-const Dynamo = require('../helpers/Dynamo');
-const { broadcast } = require('../helpers/broadcast');
-const Validation = require('../helpers/validation');
+const response = require('../helpers/apiResponses');
+const dynamo = require('../helpers/dynamo');
+const websocket = require('../helpers/websocket');
+const validation = require('../helpers/parameterValidation');
 
 const songListTableName = process.env.songListTableName;
 const songQueueTableName = process.env.songQueueTableName;
 
 exports.handler = async (event) => {
   console.info('Queue add request received', event);
-  
+
   const songId = event.pathParameters.songId;
-  if (!Validation.isValidId(songId)) {
-    return Responses._400({ message: 'Invalid song ID' });
+  if (!validation.isValidId(songId)) {
+    return response.badRequest({ message: 'Invalid song ID' });
   }
 
   let songListItem;
   try {
-    songListItem = await Dynamo.get({ ID: songId }, songListTableName);
+    songListItem = await dynamo.get({ ID: songId }, songListTableName);
   } catch (error) {
-    return Responses._404({ message: 'Song not found' });
+    return response.notFound({ message: 'Song not found' });
   }
 
-  if (await Dynamo.exists({ SongID: songId }, songQueueTableName)) {
-    return Responses._400({ message: 'Song already queued' });
+  if (await dynamo.exists({ SongID: songId }, songQueueTableName)) {
+    return response.badRequest({ message: 'Song already queued' });
   }
 
   console.debug('Adding song to queue', songListItem);
-  const existingQueueItems = (await Dynamo.getAll(songQueueTableName)).sort(
+  const existingQueueItems = (await dynamo.getAll(songQueueTableName)).sort(
     (a, b) => a.Priority - b.Priority
   );
   const newQueueEntry = {
@@ -38,7 +38,7 @@ exports.handler = async (event) => {
       : 1,
   };
   console.info('Adding queue entry', newQueueEntry);
-  await Dynamo.write(newQueueEntry, songQueueTableName);
+  await dynamo.write(newQueueEntry, songQueueTableName);
 
   const queueData = {
     songId: newQueueEntry.SongID,
@@ -48,9 +48,9 @@ exports.handler = async (event) => {
   };
   console.debug('Song added to queue', queueData);
 
-  await broadcast({
+  await websocket.broadcast({
     action: 'queueAdd',
     data: queueData,
   });
-  return Responses._200(queueData);
+  return response.success(queueData);
 };

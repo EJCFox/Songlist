@@ -1,8 +1,8 @@
-const Responses = require('../helpers/API_Responses');
-const Dynamo = require('../helpers/Dynamo');
 const { v4: uuidv4 } = require('uuid');
-const { broadcast } = require('../helpers/broadcast');
-const Validation = require('../helpers/validation');
+const response = require('../helpers/apiResponses');
+const dynamo = require('../helpers/dynamo');
+const validation = require('../helpers/parameterValidation');
+const websocket = require('../helpers/websocket');
 
 const songListTableName = process.env.songListTableName;
 
@@ -10,15 +10,15 @@ exports.handler = async (event) => {
   console.info('List add request received', event);
   const body = JSON.parse(event.body);
 
-  if (!Validation.isRequiredString(body.title)) {
-    return Responses._400({ message: 'Invalid title' });
+  if (!validation.isRequiredString(body.title)) {
+    return response.badRequest({ message: 'Invalid title' });
   }
 
-  if (!Validation.isRequiredString(body.artist)) {
-    return Responses._400({ message: 'Invalid artist' });
+  if (!validation.isRequiredString(body.artist)) {
+    return response.badRequest({ message: 'Invalid artist' });
   }
 
-  const matchedSongs = await Dynamo.search(
+  const matchedSongs = await dynamo.search(
     '(Artist = :artist) and (Title = :title)',
     { ':artist': body.artist, ':title': body.title },
     songListTableName
@@ -26,7 +26,7 @@ exports.handler = async (event) => {
   console.debug('Matched songs', matchedSongs);
   if (matchedSongs.length > 0) {
     console.debug('Matched songs', matchedSongs);
-    return Responses._400({ message: 'Song already exists' });
+    return response.badRequest({ message: 'Song already exists' });
   }
 
   const newDynamoEntry = {
@@ -36,7 +36,7 @@ exports.handler = async (event) => {
     NumberOfPlays: 0,
   };
   console.debug('Writing song entry', newDynamoEntry);
-  await Dynamo.write(newDynamoEntry, songListTableName);
+  await dynamo.write(newDynamoEntry, songListTableName);
 
   const songData = {
     id: newDynamoEntry.ID,
@@ -46,9 +46,9 @@ exports.handler = async (event) => {
   };
   console.debug('Song added', songData);
 
-  await broadcast({
+  await websocket.broadcast({
     action: 'listAdd',
     data: songData,
   });
-  return Responses._200(songData);
+  return response.success(songData);
 };

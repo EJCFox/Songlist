@@ -1,6 +1,6 @@
-const Responses = require('../helpers/API_Responses');
+const response = require('../helpers/apiResponses');
 
 exports.handler = async (event) => {
   console.info('Default hander called', event);
-  return Responses._200('pong');
+  return response.success('pong');
 };

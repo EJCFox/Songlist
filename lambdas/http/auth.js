@@ -1,7 +1,7 @@
-const AWS = require('aws-sdk');
 const https = require('https');
-const Responses = require('../helpers/API_Responses');
-const Validation = require('../helpers/validation');
+const response = require('../helpers/apiResponses');
+const validation = require('../helpers/parameterValidation');
+const ssm = require('../helpers/ssm');
 
 const twitchClientId = process.env.twitchClientId;
 const twitchRedirectUri = process.env.twitchRedirectUri;
@@ -10,18 +10,13 @@ exports.handler = async (event) => {
   console.log('Authentication request received:', event);
   var code = event.queryStringParameters && event.queryStringParameters.code;
 
-  if (!Validation.isRequiredString(code)) {
-    return Responses._400({ message: 'Invalid code' });
+  if (!validation.isRequiredString(code)) {
+    return response.badRequest({ message: 'Invalid code' });
   }
 
-  var ssm = new AWS.SSM();
-  var params = {
-    Name: 'TwitchClientSecret',
-    WithDecryption: true,
-  };
-  console.info('Fetching client secret');
-  const clientSecretResult = await ssm.getParameter(params).promise();
-  const twitchClientSecret = clientSecretResult.Parameter.Value;
+  const twitchClientSecret = await ssm.getDecryptedParameter(
+    'TwitchClientSecret'
+  );
   const path = `/oauth2/token?client_id=${twitchClientId}&client_secret=${twitchClientSecret}&code=${code}&grant_type=authorization_code&redirect_uri=${twitchRedirectUri}`;
   const options = {
     hostname: 'id.twitch.tv',
@@ -34,7 +29,7 @@ exports.handler = async (event) => {
     const tokenRequest = https.request(options, (res) => {
       res.setEncoding('utf8');
       res.on('data', (chunk) => {
-        resolve(JSON.parse(chunk).id_token);
+        resolve({ token: JSON.parse(chunk).id_token, isAdmin: true });
       });
     });
     tokenRequest.on('error', (e) => {
