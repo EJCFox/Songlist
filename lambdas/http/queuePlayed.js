@@ -11,7 +11,7 @@ const songHistoryTableName = process.env.songHistoryTableName;
 exports.handler = async (event) => {
   console.info('Queue mark song as played request received', event);
 
-  if (!isAdminRequest(event)) {
+  if (!(await isAdminRequest(event))) {
     return response.unauthorized({
       message: 'Unauthorized: only admins can mark songs as played',
     });

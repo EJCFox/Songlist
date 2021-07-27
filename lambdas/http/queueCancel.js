@@ -9,7 +9,7 @@ const songQueueTableName = process.env.songQueueTableName;
 exports.handler = async (event) => {
   console.info('Queue cancel request received', event);
 
-  if (!isAdminRequest(event)) {
+  if (!(await isAdminRequest(event))) {
     return response.unauthorized({
       message: 'Unauthorized: only admins can cancel songs',
     });

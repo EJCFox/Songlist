@@ -10,7 +10,7 @@ const songListTableName = process.env.songListTableName;
 exports.handler = async (event) => {
   console.info('List add request received', event);
 
-  if (!isAdminRequest(event)) {
+  if (!(await isAdminRequest(event))) {
     return response.unauthorized({
       message: 'Unauthorized: only admins can add songs to the list',
     });

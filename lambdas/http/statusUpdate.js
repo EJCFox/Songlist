@@ -9,7 +9,7 @@ const configTableName = process.env.configTableName;
 exports.handler = async (event) => {
   console.info('Set status request event received', event);
 
-  if (!isAdminRequest(event)) {
+  if (!(await isAdminRequest(event))) {
     return response.unauthorized({
       message: 'Unauthorized: only admins can open/close requests',
     });

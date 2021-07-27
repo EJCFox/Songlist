@@ -4,10 +4,10 @@ var jwksClient = require('jwks-rsa');
 const response = require('../helpers/apiResponses');
 const validation = require('../helpers/parameterValidation');
 const ssm = require('../helpers/ssm');
+const { userIsAdmin } = require('../helpers/adminHelper');
 
 const twitchClientId = process.env.twitchClientId;
 const twitchRedirectUri = process.env.twitchRedirectUri;
-const adminUsers = process.env.adminUsers.split(',');
 
 exports.handler = async (event) => {
   console.info('Authentication request received:', event);
@@ -36,7 +36,7 @@ exports.handler = async (event) => {
     });
   }
 
-  return new Promise((resolve, reject) => {
+  const username = await new Promise((resolve, reject) => {
     jwt.verify(
       idToken,
       getSigningKey,
@@ -45,12 +45,16 @@ exports.handler = async (event) => {
         if (err) {
           reject(err);
         } else {
-          resolve({
-            token: idToken,
-            isAdmin: adminUsers.includes(decoded.preferred_username),
-          });
+          resolve(decoded.preferred_username);
         }
       }
     );
+  });
+
+  const isAdmin = await userIsAdmin(username);
+
+  return response.success({
+    token: idToken,
+    isAdmin,
   });
 };

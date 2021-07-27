@@ -17,7 +17,6 @@ provider:
         configTableName: ${self:custom.configTableName}
         twitchClientId: ${env:TWITCH_CLIENT_ID}
         twitchRedirectUri: ${env:TWITCH_REDIRECT_URI}
-        adminUsers: ${env:ADMIN_USERS}
     iam:
         role:
             statements:
