@@ -22,19 +22,9 @@ exports.handler = async (event) => {
     return response.badRequest({ message: 'Invalid song ID' });
   }
 
-  const timestamp = new Date().toISOString();
   const songItem = await dynamo.get({ ID: songId }, songListTableName);
 
-  try {
-    await dynamo.delete(
-      { SongID: songId },
-      songQueueTableName,
-      'attribute_exists(SongID)'
-    );
-  } catch (error) {
-    return response.notFound({ message: 'Song not currently queued' });
-  }
-
+  const timestamp = new Date().toISOString();
   const updatedSongItem = {
     ...songItem,
     NumberOfPlays: songItem.NumberOfPlays + 1,
@@ -42,18 +32,53 @@ exports.handler = async (event) => {
   };
   const historyItem = {
     SongID: songId,
+    title: songItem.Title,
+    artist: songItem.Artist,
     Timestamp: timestamp,
   };
 
-  console.info('Updating song list entry', songItem, updatedSongItem);
-  await dynamo.write(
-    updatedSongItem,
-    songListTableName,
-    `NumberOfPlays = :numberOfPlays`,
-    { ':numberOfPlays': songItem.NumberOfPlays }
-  );
-  console.info('Writing history entry', historyItem);
-  await dynamo.write(historyItem, songHistoryTableName);
+  try {
+    await dynamo.transactWrite(
+      {
+        Delete: {
+          TableName: songQueueTableName,
+          Key: { SongID: songId },
+          ConditionExpression: 'attribute_exists(SongID)',
+        },
+      },
+      {
+        Put: {
+          TableName: songListTableName,
+          Item: updatedSongItem,
+          ConditionExpression: `NumberOfPlays = :numberOfPlays`,
+          ExpressionAttributeValues: {
+            ':numberOfPlays': songItem.NumberOfPlays,
+          },
+        },
+      },
+      {
+        Put: {
+          TableName: songHistoryTableName,
+          Item: historyItem,
+        },
+      }
+    );
+  } catch (error) {
+    if (
+      error.code === 'TransactionCanceledException' ||
+      error.statusCode === 400
+    ) {
+      console.error('Failed to write updates:', error);
+      return response.badRequest({
+        message:
+          'Cannot mark song as played, most likely because the song is not in the queue',
+      });
+    }
+    throw error;
+  }
+
+  console.debug('Written updated song:', updatedSongItem);
+  console.debug('Written history entry:', historyItem);
 
   await websocket.broadcast({
     action: 'queuePlayed',

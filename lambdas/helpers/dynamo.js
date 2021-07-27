@@ -108,6 +108,14 @@ const dynamo = {
 
     return documentClient.delete(params).promise();
   },
+
+  async transactWrite(...TransactItems) {
+    const params = {
+      TransactItems,
+    };
+
+    return documentClient.transactWrite(params).promise();
+  },
 };
 
 module.exports = dynamo;
