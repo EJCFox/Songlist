@@ -21,10 +21,28 @@ exports.handler = async (event) => {
     return response.badRequest({ message: 'Invalid status' });
   }
 
-  await dynamo.write(
-    { ConfigKey: 'RequestsOpen', ConfigValue: body.requestsOpen },
-    configTableName
-  );
+  try {
+    await dynamo.write(
+      { ConfigKey: 'RequestsOpen', ConfigValue: body.requestsOpen },
+      configTableName,
+      `ConfigValue = :oldConfigValue`,
+      { ':oldConfigValue': !body.requestsOpen }
+    );
+  } catch (error) {
+    if (
+      error.code === 'TransactionCanceledException' ||
+      error.statusCode === 400
+    ) {
+      console.error('Failed to update request status:', error);
+      return response.badRequest({
+        message: `Requests are already ${
+          body.requestsOpen ? 'open' : 'closed'
+        }`,
+      });
+    }
+    throw error;
+  }
+
   await websocket.broadcast({
     action: 'statusUpdate',
     data: { requestsOpen: body.requestsOpen },
