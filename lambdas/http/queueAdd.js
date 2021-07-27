@@ -2,6 +2,7 @@ const response = require('../helpers/apiResponses');
 const dynamo = require('../helpers/dynamo');
 const websocket = require('../helpers/websocket');
 const validation = require('../helpers/parameterValidation');
+const { isAdminRequest } = require('../helpers/adminHelper');
 
 const songListTableName = process.env.songListTableName;
 const songQueueTableName = process.env.songQueueTableName;
@@ -20,7 +21,7 @@ exports.handler = async (event) => {
     configTableName
   );
   const requestsOpen = config ? config.ConfigValue : false;
-  if (!requestsOpen) {
+  if (!requestsOpen && !(await isAdminRequest(event))) {
     return response.badRequest({ message: 'Requests are currently closed' });
   }
 
