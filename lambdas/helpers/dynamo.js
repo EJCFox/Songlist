@@ -10,6 +10,7 @@ const dynamo = {
     };
 
     const data = await documentClient.get(params).promise();
+    console.debug('Dynamo EXISTS:', data);
     return !!data && !!data.Item;
   },
 
@@ -26,7 +27,7 @@ const dynamo = {
         `There was an error fetching the data for ID of ${ID} from ${TableName}`
       );
     }
-    console.debug(data);
+    console.debug('Dynamo GET:', data);
 
     return data.Item;
   },
@@ -44,7 +45,7 @@ const dynamo = {
         `There was an error fetching the data for ID of ${ID} from ${TableName}`
       );
     }
-    console.debug(data);
+    console.debug('Dyanamo GET if exists:', data);
 
     return data.Item || null;
   },
@@ -59,7 +60,7 @@ const dynamo = {
     if (!data || !data.Items) {
       throw Error(`There was an error fetching the data ${TableName}`);
     }
-    console.debug(data);
+    console.debug('Dynamo GET all:', data);
 
     return data.Items;
   },
@@ -76,7 +77,7 @@ const dynamo = {
     if (!data || !data.Items) {
       throw Error(`There was an error searching for items in ${TableName}`);
     }
-    console.debug(data);
+    console.debug('Dynamo SEARCH:', data);
 
     return data.Items;
   },

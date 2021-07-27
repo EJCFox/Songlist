@@ -33,7 +33,6 @@ exports.handler = async (event) => {
   );
   console.debug('Matched songs', matchedSongs);
   if (matchedSongs.length > 0) {
-    console.debug('Matched songs', matchedSongs);
     return response.badRequest({ message: 'Song already exists' });
   }
 
