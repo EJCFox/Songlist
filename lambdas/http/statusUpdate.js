@@ -25,7 +25,7 @@ exports.handler = async (event) => {
     await dynamo.write(
       { ConfigKey: 'RequestsOpen', ConfigValue: body.requestsOpen },
       configTableName,
-      `ConfigValue = :oldConfigValue`,
+      `attribute_not_exists(ConfigValue) OR ConfigValue = :oldConfigValue`,
       { ':oldConfigValue': !body.requestsOpen }
     );
   } catch (error) {
