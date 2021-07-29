@@ -8,8 +8,11 @@ const isAdminRequest = (event) => {
 };
 
 const userIsAdmin = async (user) => {
-  const config = await dynamo.get({ ConfigKey: 'AdminUsers' }, configTableName);
-  const adminUsers = config.ConfigValue.split(',');
+  const config = await dynamo.getIfExists(
+    { ConfigKey: 'AdminUsers' },
+    configTableName
+  );
+  const adminUsers = config ? config.ConfigValue.split(',') : [];
   return adminUsers.includes(user);
 };
 
