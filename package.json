@@ -1,7 +1,7 @@
 {
-    "name": "myserverlessproject",
+    "name": "emilyfoxmusic-songlist",
     "version": "1.0.0",
-    "description": "",
+    "description": "Serverless project that runs the live section of the Emily Fox Music website.",
     "main": "webpack.config.js",
     "dependencies": {
         "axios": "^0.21.1",
@@ -19,12 +19,12 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/SamWSoftware/ServerlessYoutubeSeries.git"
+        "url": "git+https://github.com/EJCFox/Songlist.git"
     },
-    "author": "",
-    "license": "ISC",
+    "author": "Emily Fox",
+    "license": "MIT",
     "bugs": {
-        "url": "https://github.com/SamWSoftware/ServerlessYoutubeSeries/issues"
+        "url": "https://github.com/EJCFox/Songlist/issues"
     },
-    "homepage": "https://github.com/SamWSoftware/ServerlessYoutubeSeries#readme"
+    "homepage": "https://github.com/EJCFox/Songlist"
 }
