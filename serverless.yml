@@ -6,6 +6,7 @@ unresolvedVariablesNotificationMode: error
 provider:
     name: aws
     runtime: nodejs12.x
+    stage: dev
     profile: Songlist
     region: eu-west-2
     lambdaHashingVersion: 20201221
@@ -22,12 +23,28 @@ provider:
             statements:
                 - Effect: Allow
                   Action:
-                      - dynamodb:*
-                  Resource: "*"
+                      - dynamodb:GetItem
+                      - dynamodb:BatchGetItem
+                      - dynamodb:Query
+                      - dynamodb:Scan
+                      - dynamodb:PartiQLDelete
+                      - dynamodb:PartiQLSelect
+                      - dynamodb:PartiQLInsert
+                      - dynamodb:PartiQLUpdate
+                      - dynamodb:PutItem
+                      - dynamodb:UpdateItem
+                      - dynamodb:DeleteItem
+                      - dynamodb:BatchWriteItem
+                  Resource:
+                      - "arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${self:custom.usersTableName}"
+                      - "arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${self:custom.songQueueTableName}"
+                      - "arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${self:custom.songListTableName}"
+                      - "arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${self:custom.songHistoryTableName}"
+                      - "arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${self:custom.configTableName}"
                 - Effect: Allow
                   Action:
                       - ssm:GetParameter
-                  Resource: "*"
+                  Resource: "arn:aws:ssm:${aws:region}:${aws:accountId}:parameter/TwitchClientSecret"
     httpApi:
         cors:
             allowedOrigins:
