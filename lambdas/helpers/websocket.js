@@ -23,15 +23,21 @@ const broadcast = async (data) => {
   const allConnections = await dynamo.getAll(usersTableName);
   console.debug(allConnections);
 
-  const notifications = allConnections.map(({ ID, domainName, stage }) =>
-    websocketSend({
-      domainName,
-      stage,
-      connectionId: ID,
-      data,
-    })
+  const notifications = allConnections.map(
+    async ({ ID, domainName, stage }) => {
+      try {
+        await websocketSend({
+          domainName,
+          stage,
+          connectionId: ID,
+          data,
+        });
+      } catch (error) {
+        console.info(`Could not broadcast to connectionId ${ID}`, error);
+      }
+    }
   );
-  await Promise.all(notifications);
+  await Promise.allSettled(notifications);
 };
 
 module.exports = {
