@@ -58,11 +58,11 @@ provider:
                     - ${env:TWITCH_CLIENT_ID}
 
 custom:
-    usersTableName: Songlist-WebsocketConnections
-    songQueueTableName: Songlist-Queue
-    songListTableName: Songlist-Songs
-    songHistoryTableName: Songlist-History
-    configTableName: Songlist-Config
+    usersTableName: Songlist-WebsocketConnections-${sls:stage}
+    songQueueTableName: Songlist-Queue-${sls:stage}
+    songListTableName: Songlist-Songs-${sls:stage}
+    songHistoryTableName: Songlist-History-${sls:stage}
+    configTableName: Songlist-Config-${sls:stage}
 
 functions:
     # Websocket (for notifications only - no auth needed)
