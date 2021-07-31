@@ -8,7 +8,7 @@ This project is a serverless project that uses [Serverless](https://www.serverle
 
 | Endpoint                       | Premissions           | Description                                          |
 | ------------------------------ | --------------------- | ---------------------------------------------------- |
-| GET - /authorize               | None                  | Authenticates the user                               |
+| GET - /authorize               | None                  | Authenticates the user (see below for details).      |
 | GET - /status                  | None                  | Get the status of song requests (open or closed).    |
 | POST - /status                 | Authenticated (admin) | Update the status of song requests (open or closed). |
 | GET - /list                    | None                  | Fetch all songs in the songlist.                     |
