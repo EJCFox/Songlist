@@ -19,12 +19,12 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/EJCFox/Songlist.git"
+        "url": "git+https://github.com/emilyfoxmusic/website-twitch-songlist-api.git"
     },
     "author": "Emily Fox",
     "license": "MIT",
     "bugs": {
-        "url": "https://github.com/EJCFox/Songlist/issues"
+        "url": "https://github.com/emilyfoxmusic/website-twitch-songlist-api/issues"
     },
-    "homepage": "https://github.com/EJCFox/Songlist"
+    "homepage": "https://github.com/emilyfoxmusic/website-twitch-songlist-api"
 }
