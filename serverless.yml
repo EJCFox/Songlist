@@ -1,15 +1,13 @@
 service: songlist
 configValidationMode: error
 useDotenv: true
-unresolvedVariablesNotificationMode: error
 
 provider:
     name: aws
-    runtime: nodejs12.x
+    runtime: nodejs18.x
     stage: dev
     profile: Songlist
     region: eu-west-2
-    lambdaHashingVersion: 20201221
     environment:
         usersTableName: ${self:custom.usersTableName}
         songQueueTableName: ${self:custom.songQueueTableName}
